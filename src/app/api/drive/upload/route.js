@@ -4,6 +4,19 @@ import { uploadReceiptToDrive } from "@/lib/google/drive";
 
 export const runtime = "nodejs";
 
+// Ubah nama orang jadi potongan aman untuk nama file Drive:
+// buang aksen, ganti karakter non-alfanumerik dengan "-", batasi panjangnya.
+function slugForFilename(name) {
+  const slug = String(name || "")
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+  return slug || "tanpa-nama";
+}
+
 export async function POST(request) {
   const supabase = await createClient();
   const {
@@ -28,7 +41,7 @@ export async function POST(request) {
 
   const { data: cashAdvance } = await supabase
     .from("cash_advances")
-    .select("purpose, created_at")
+    .select("purpose, created_at, profiles:requester_id(full_name)")
     .eq("id", cashAdvanceId)
     .single();
 
@@ -42,9 +55,10 @@ export async function POST(request) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const ext = (file.type?.split("/")[1] || "jpg").replace("jpeg", "jpg");
-  const filename = `${kind}_${cashAdvanceId}_${Date.now()}.${ext}`;
   const shortId = cashAdvanceId.slice(0, 8);
   const datePrefix = cashAdvance.created_at?.slice(0, 10) || "";
+  const nameSlug = slugForFilename(cashAdvance.profiles?.full_name);
+  const filename = `${kind}_${nameSlug}_${datePrefix}_${shortId}_${Date.now()}.${ext}`;
   const folderName = `${datePrefix} ${cashAdvance.purpose} (${shortId})`
     .trim()
     .slice(0, 120);
