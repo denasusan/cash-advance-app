@@ -37,8 +37,8 @@ export default function ApprovalActions({ cashAdvanceId }) {
       return;
     }
 
-    if (status === "approved") {
-      fetch(`/api/cash-advances/${cashAdvanceId}/notify-approved`, {
+    if (status === "approved" || status === "rejected") {
+      fetch(`/api/cash-advances/${cashAdvanceId}/notify-decision`, {
         method: "POST",
       }).catch(() => {});
     }

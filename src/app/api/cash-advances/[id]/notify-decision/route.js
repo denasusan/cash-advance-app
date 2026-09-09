@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
-import { sendTelegramMessage, buildApprovalMessage } from "@/lib/telegram/send";
+import {
+  sendTelegramMessage,
+  buildApprovalMessage,
+  buildRejectionMessage,
+} from "@/lib/telegram/send";
 
 export async function POST(request, { params }) {
   const { id } = await params;
@@ -14,11 +18,13 @@ export async function POST(request, { params }) {
   const supabase = await createClient();
   const { data: ca } = await supabase
     .from("cash_advances")
-    .select("purpose, amount_requested, status, bank_name, bank_account_number, profiles:requester_id(telegram_chat_id)")
+    .select(
+      "purpose, amount_requested, status, review_note, bank_name, bank_account_number, profiles:requester_id(telegram_chat_id)"
+    )
     .eq("id", id)
     .single();
 
-  if (!ca || ca.status !== "approved") {
+  if (!ca || (ca.status !== "approved" && ca.status !== "rejected")) {
     return NextResponse.json({ error: "Pengajuan tidak valid." }, { status: 404 });
   }
 
@@ -28,13 +34,21 @@ export async function POST(request, { params }) {
   }
 
   try {
-    const text = buildApprovalMessage({
-      purpose: ca.purpose,
-      amount: ca.amount_requested,
-      bankName: ca.bank_name,
-      bankAccountNumber: ca.bank_account_number,
-      formatCurrency,
-    });
+    const text =
+      ca.status === "approved"
+        ? buildApprovalMessage({
+            purpose: ca.purpose,
+            amount: ca.amount_requested,
+            bankName: ca.bank_name,
+            bankAccountNumber: ca.bank_account_number,
+            formatCurrency,
+          })
+        : buildRejectionMessage({
+            purpose: ca.purpose,
+            amount: ca.amount_requested,
+            note: ca.review_note,
+            formatCurrency,
+          });
     await sendTelegramMessage(chatId, text);
     return NextResponse.json({ ok: true });
   } catch (err) {

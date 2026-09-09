@@ -42,9 +42,24 @@ export function buildApprovalMessage({ purpose, amount, bankName, bankAccountNum
   if (bankName || bankAccountNumber) {
     lines.push(
       "",
-      "Dana telah dikirim ke rekening:",
+      "Dana akan dikirim ke rekening:",
       `${escapeHtml(bankName)} - ${escapeHtml(bankAccountNumber)}`
     );
+  }
+
+  return lines.join("\n");
+}
+
+export function buildRejectionMessage({ purpose, amount, note, formatCurrency }) {
+  const lines = [
+    "❌ <b>Pengajuan Cash Advance Ditolak</b>",
+    "",
+    `Keperluan: ${escapeHtml(purpose)}`,
+    `Nominal: ${escapeHtml(formatCurrency(amount))}`,
+  ];
+
+  if (note) {
+    lines.push("", `Catatan: ${escapeHtml(note)}`);
   }
 
   return lines.join("\n");

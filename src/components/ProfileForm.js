@@ -4,9 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ProfileForm({ profileId, initialChatId }) {
+export default function ProfileForm({
+  profileId,
+  initialChatId,
+  initialBankName,
+  initialBankAccountNumber,
+}) {
   const router = useRouter();
   const [chatId, setChatId] = useState(initialChatId || "");
+  const [bankName, setBankName] = useState(initialBankName || "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(
+    initialBankAccountNumber || ""
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +29,11 @@ export default function ProfileForm({ profileId, initialChatId }) {
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ telegram_chat_id: chatId || null })
+      .update({
+        telegram_chat_id: chatId || null,
+        bank_name: bankName.trim() || null,
+        bank_account_number: bankAccountNumber.trim() || null,
+      })
       .eq("id", profileId);
 
     setSaving(false);
@@ -52,6 +65,39 @@ export default function ProfileForm({ profileId, initialChatId }) {
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
+          Bank Tujuan Transfer
+        </label>
+        <input
+          type="text"
+          value={bankName}
+          onChange={(e) => setBankName(e.target.value)}
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+          placeholder="Contoh: BCA, Mandiri, BRI"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Nomor Rekening
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={bankAccountNumber}
+          onChange={(e) =>
+            setBankAccountNumber(e.target.value.replace(/\D/g, ""))
+          }
+          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+          placeholder="Nomor rekening penerima"
+        />
+        <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+          Rekening ini otomatis terisi saat mengajukan Cash Advance, jadi tidak
+          perlu diketik ulang. Tetap bisa diubah per pengajuan.
+        </p>
+      </div>
+
+      <div className="border-t border-slate-100 pt-4">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
           Telegram Chat ID
         </label>
         <input
@@ -64,7 +110,7 @@ export default function ProfileForm({ profileId, initialChatId }) {
         />
         <p className="text-xs text-slate-500 mt-2 leading-relaxed">
           Diisi supaya Anda dapat notifikasi Telegram saat pengajuan Cash
-          Advance disetujui. Caranya:
+          Advance disetujui atau ditolak. Caranya:
           <br />
           1. Chat bot <span className="font-medium">@userinfobot</span> di
           Telegram untuk tahu Chat ID Anda (angka).

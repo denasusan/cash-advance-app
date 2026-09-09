@@ -14,7 +14,12 @@ export default async function ProfilePage() {
           {profile?.full_name} &middot; {profile?.email}
         </p>
       </div>
-      <ProfileForm profileId={profile.id} initialChatId={profile.telegram_chat_id} />
+      <ProfileForm
+        profileId={profile.id}
+        initialChatId={profile.telegram_chat_id}
+        initialBankName={profile.bank_name}
+        initialBankAccountNumber={profile.bank_account_number}
+      />
     </div>
   );
 }

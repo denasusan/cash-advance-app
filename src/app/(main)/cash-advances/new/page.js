@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
@@ -17,6 +17,31 @@ export default function NewCashAdvancePage() {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Prefill rekening tujuan dari profil supaya tidak perlu diketik ulang tiap
+  // pengajuan. Pakai functional updater + `prev ||` agar tidak menimpa kalau
+  // user sudah sempat mengetik sebelum query selesai.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("bank_name, bank_account_number")
+        .eq("id", user.id)
+        .single();
+      if (!active || !profile) return;
+      setBankName((prev) => prev || profile.bank_name || "");
+      setBankAccountNumber((prev) => prev || profile.bank_account_number || "");
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -224,6 +249,10 @@ export default function NewCashAdvancePage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
             placeholder="Nomor rekening penerima"
           />
+          <p className="text-xs text-slate-500 mt-2">
+            Terisi otomatis dari profil. Ubah di sini kalau pengajuan ini pakai
+            rekening lain, atau set default di halaman Profil.
+          </p>
         </div>
 
         <button
