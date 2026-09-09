@@ -2,7 +2,9 @@ import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
+import { getPage, pageRange, PAGE_SIZE } from "@/lib/pagination";
 import CashAdvanceCard from "@/components/CashAdvanceCard";
+import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -24,23 +26,29 @@ async function attachBalances(supabase, cashAdvances) {
   }));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }) {
+  const page = getPage(await searchParams);
+  const { from, to } = pageRange(page);
   const { profile } = await getUserProfile();
   const supabase = await createClient();
   const isOperational = profile?.role === "operational";
 
+  // Statistik dihitung lintas seluruh data lewat RPC, bukan dari list yang
+  // dipaginasi, supaya angkanya tidak ikut terpotong.
+  const { data: stats } = await supabase
+    .rpc("cash_advance_dashboard_stats")
+    .single();
+  const pendingCount = Number(stats?.pending_count ?? 0);
+  const totalOutstanding = Number(stats?.total_outstanding ?? 0);
+
   if (isOperational) {
-    const { data: cashAdvances } = await supabase
+    const { data: cashAdvances, count } = await supabase
       .from("cash_advances")
-      .select("*, profiles:requester_id(full_name)")
+      .select("*, profiles:requester_id(full_name)", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(20);
+      .range(from, to);
 
     const list = await attachBalances(supabase, cashAdvances ?? []);
-    const pendingCount = list.filter((ca) => ca.status === "pending").length;
-    const totalOutstanding = list
-      .filter((ca) => ca.status === "approved")
-      .reduce((sum, ca) => sum + Number(ca.balance ?? 0), 0);
 
     return (
       <div className="space-y-5">
@@ -79,21 +87,25 @@ export default async function DashboardPage() {
               <CashAdvanceCard key={ca.id} ca={ca} showRequester />
             ))}
           </div>
+          <Pagination
+            page={page}
+            total={count}
+            pageSize={PAGE_SIZE}
+            basePath="/dashboard"
+          />
         </div>
       </div>
     );
   }
 
-  const { data: cashAdvances } = await supabase
+  const { data: cashAdvances, count } = await supabase
     .from("cash_advances")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("requester_id", profile.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   const list = await attachBalances(supabase, cashAdvances ?? []);
-  const totalOutstanding = list
-    .filter((ca) => ca.status === "approved")
-    .reduce((sum, ca) => sum + Number(ca.balance ?? 0), 0);
 
   return (
     <div className="space-y-5">
@@ -126,6 +138,12 @@ export default async function DashboardPage() {
             <CashAdvanceCard key={ca.id} ca={ca} />
           ))}
         </div>
+        <Pagination
+          page={page}
+          total={count}
+          pageSize={PAGE_SIZE}
+          basePath="/dashboard"
+        />
       </div>
     </div>
   );

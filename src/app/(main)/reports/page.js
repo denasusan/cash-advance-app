@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
+import { fetchAll, MAX_FETCH_ROWS } from "@/lib/pagination";
 import ReportsTable from "@/components/ReportsTable";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +10,21 @@ export default async function ReportsPage() {
   if (profile?.role !== "operational") redirect("/dashboard");
 
   const supabase = await createClient();
-  const { data: receipts } = await supabase
-    .from("receipts")
-    .select(
-      "*, cash_advances:cash_advance_id(purpose, profiles:requester_id(full_name))"
-    )
-    .order("created_at", { ascending: false });
 
-  const rows = (receipts ?? []).map((r) => ({
+  // Laporan butuh SEMUA kwitansi sekaligus (untuk pencarian, total, & export
+  // CSV di sisi klien). Ambil per potongan agar menembus plafon 1000 baris
+  // PostgREST, dibatasi MAX_FETCH_ROWS sebagai pengaman.
+  const receipts = await fetchAll(({ from, to }) =>
+    supabase
+      .from("receipts")
+      .select(
+        "*, cash_advances:cash_advance_id(purpose, profiles:requester_id(full_name))"
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to)
+  );
+
+  const rows = receipts.map((r) => ({
     id: r.id,
     receiptDate: r.receipt_date,
     requesterName: r.cash_advances?.profiles?.full_name ?? "-",
@@ -27,6 +35,8 @@ export default async function ReportsPage() {
     driveUrl: r.drive_view_url,
   }));
 
+  const capped = rows.length >= MAX_FETCH_ROWS;
+
   return (
     <div className="space-y-4">
       <div>
@@ -35,6 +45,12 @@ export default async function ReportsPage() {
           Rekap seluruh kwitansi realisasi Cash Advance.
         </p>
       </div>
+      {capped && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Menampilkan {MAX_FETCH_ROWS.toLocaleString("id-ID")} kwitansi terbaru.
+          Untuk rekap lebih lama, export CSV per periode secara berkala.
+        </p>
+      )}
       <ReportsTable rows={rows} />
     </div>
   );
