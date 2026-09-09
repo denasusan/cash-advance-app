@@ -12,8 +12,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Cash Advance",
+  applicationName: "Cash Advance",
+  title: {
+    default: "Cash Advance",
+    template: "%s · Cash Advance",
+  },
   description: "Pencatatan pengajuan dan realisasi Cash Advance",
+  appleWebApp: {
+    capable: true,
+    title: "Cash Advance",
+    statusBarStyle: "default",
+  },
+  openGraph: {
+    title: "Cash Advance",
+    description: "Pencatatan pengajuan dan realisasi Cash Advance",
+    type: "website",
+  },
 };
 
 export const viewport = {

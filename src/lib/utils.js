@@ -30,6 +30,18 @@ export const STATUS_STYLE = {
   closed: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
+export const FUNDING_SOURCE_LABEL = {
+  program: "Program",
+  marketing_operasional: "Marketing / Operasional",
+  program_lainnya: "Program Lainnya",
+};
+
+export const OBJECTIVE_LABEL = {
+  penyaluran: "Penyaluran",
+  event: "Event",
+  lainnya: "Lainnya",
+};
+
 export function toCsvValue(value) {
   const str = String(value ?? "");
   if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;

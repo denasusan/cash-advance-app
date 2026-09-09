@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Settings, Wallet } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "@/components/Logo";
 
 export default function Header({ fullName, role }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function Header({ fullName, role }) {
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-brand flex items-center justify-center shrink-0">
-            <Wallet className="text-white" size={18} />
+            <Logo className="text-white" size={18} />
           </div>
           <div className="leading-tight">
             <p className="text-sm font-semibold text-slate-900">

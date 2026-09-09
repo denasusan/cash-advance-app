@@ -3,8 +3,8 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   return (
@@ -69,7 +69,7 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="h-14 w-14 rounded-2xl bg-brand flex items-center justify-center mb-4">
-            <Wallet className="text-white" size={28} />
+            <Logo className="text-white" size={28} />
           </div>
           <h1 className="text-xl font-semibold text-slate-900">
             Cash Advance

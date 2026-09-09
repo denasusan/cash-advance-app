@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Camera } from "lucide-react";
 import { createClient, getUserProfile } from "@/lib/supabase/server";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatDate,
+  FUNDING_SOURCE_LABEL,
+  OBJECTIVE_LABEL,
+} from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import ReceiptCard from "@/components/ReceiptCard";
 import ApprovalActions from "@/components/ApprovalActions";
@@ -100,6 +105,41 @@ export default async function CashAdvanceDetailPage({ params }) {
             </p>
           </div>
         </div>
+
+        {(ca.objective || ca.funding_source || ca.rab_url) && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {ca.objective && (
+              <div className="bg-slate-50 rounded-lg px-3 py-2">
+                <p className="text-xs text-slate-500">Tujuan</p>
+                <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  {OBJECTIVE_LABEL[ca.objective] ?? ca.objective}
+                </p>
+              </div>
+            )}
+            {ca.funding_source && (
+              <div className="bg-slate-50 rounded-lg px-3 py-2">
+                <p className="text-xs text-slate-500">Sumber Dana</p>
+                <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  {FUNDING_SOURCE_LABEL[ca.funding_source] ?? ca.funding_source}
+                  {ca.program_ref ? ` · ${ca.program_ref}` : ""}
+                </p>
+              </div>
+            )}
+            {ca.rab_url && (
+              <div className="bg-slate-50 rounded-lg px-3 py-2 col-span-2">
+                <p className="text-xs text-slate-500">RAB</p>
+                <a
+                  href={ca.rab_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-brand mt-0.5 break-all underline"
+                >
+                  {ca.rab_url}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {(ca.bank_name || ca.bank_account_number) && (
           <div className="mt-4 bg-slate-50 rounded-lg px-3 py-2">
