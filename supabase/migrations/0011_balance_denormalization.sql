@@ -147,7 +147,12 @@ create trigger on_reimbursement_deleted
 
 -- ============ VIEW: sekarang baca langsung dari kolom tersimpan, tanpa
 -- subquery ter-korelasi ============
-create or replace view public.cash_advance_balances
+-- drop dulu, bukan create or replace: tipe kolom total_spent berubah dari
+-- `numeric` polos (hasil SUM di view lama) jadi `numeric(14,2)` (kolom asli
+-- di cash_advances), dan Postgres menolak create-or-replace yang mengubah
+-- tipe kolom view yang sudah ada.
+drop view if exists public.cash_advance_balances;
+create view public.cash_advance_balances
 with (security_invoker = true) as
 select
   ca.id as cash_advance_id,
