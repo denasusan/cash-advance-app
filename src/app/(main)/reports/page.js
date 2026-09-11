@@ -14,11 +14,14 @@ export default async function ReportsPage() {
   // Laporan butuh SEMUA kwitansi sekaligus (untuk pencarian, total, & export
   // CSV di sisi klien). Ambil per potongan agar menembus plafon 1000 baris
   // PostgREST, dibatasi MAX_FETCH_ROWS sebagai pengaman.
+  // Hanya ambil kolom yang benar-benar dipakai ReportsTable — "*" sebelumnya
+  // ikut menarik ocr_raw_text (blob teks OCR) untuk sampai 10.000 baris di
+  // setiap kunjungan halaman ini, salah satu query paling berat di aplikasi.
   const receipts = await fetchAll(({ from, to }) =>
     supabase
       .from("receipts")
       .select(
-        "*, cash_advances:cash_advance_id(purpose, profiles:requester_id(full_name))"
+        "id, receipt_date, vendor, amount, notes, drive_view_url, cash_advances:cash_advance_id(purpose, profiles:requester_id(full_name))"
       )
       .order("created_at", { ascending: false })
       .range(from, to)

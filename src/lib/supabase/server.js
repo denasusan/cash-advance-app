@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
@@ -26,7 +27,10 @@ export async function createClient() {
   );
 }
 
-export async function getUserProfile() {
+// Setiap layout dan page di bawah (main) memanggil getUserProfile() sendiri-
+// sendiri. Dibungkus React.cache supaya dalam satu request server (layout +
+// page) hanya ada satu auth.getUser() + satu query profiles, bukan dua kali.
+export const getUserProfile = cache(async function getUserProfile() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,4 +45,4 @@ export async function getUserProfile() {
     .single();
 
   return { user, profile };
-}
+});
