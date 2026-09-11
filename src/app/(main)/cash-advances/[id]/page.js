@@ -21,37 +21,44 @@ export default async function CashAdvanceDetailPage({ params }) {
   const { profile } = await getUserProfile();
   const supabase = await createClient();
 
-  const { data: ca } = await supabase
-    .from("cash_advances")
-    .select("*, profiles:requester_id(full_name, email)")
-    .eq("id", id)
-    .single();
+  // Kelima query ini cuma butuh `id`, tidak saling bergantung -- dijalankan
+  // paralel (bukan satu-satu berurutan) supaya total waktu tunggu halaman ini
+  // cuma sepanjang query yang paling lambat, bukan jumlah kelimanya.
+  const [
+    { data: ca },
+    { data: balanceRow },
+    { data: receipts },
+    { data: returns },
+    { data: reimbursements },
+  ] = await Promise.all([
+    supabase
+      .from("cash_advances")
+      .select("*, profiles:requester_id(full_name, email)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("cash_advance_balances")
+      .select("balance, total_spent, total_returned, total_reimbursed")
+      .eq("cash_advance_id", id)
+      .single(),
+    supabase
+      .from("receipts")
+      .select("*")
+      .eq("cash_advance_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("cash_advance_returns")
+      .select("*")
+      .eq("cash_advance_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("cash_advance_reimbursements")
+      .select("*")
+      .eq("cash_advance_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (!ca) notFound();
-
-  const { data: balanceRow } = await supabase
-    .from("cash_advance_balances")
-    .select("balance, total_spent, total_returned, total_reimbursed")
-    .eq("cash_advance_id", id)
-    .single();
-
-  const { data: receipts } = await supabase
-    .from("receipts")
-    .select("*")
-    .eq("cash_advance_id", id)
-    .order("created_at", { ascending: false });
-
-  const { data: returns } = await supabase
-    .from("cash_advance_returns")
-    .select("*")
-    .eq("cash_advance_id", id)
-    .order("created_at", { ascending: false });
-
-  const { data: reimbursements } = await supabase
-    .from("cash_advance_reimbursements")
-    .select("*")
-    .eq("cash_advance_id", id)
-    .order("created_at", { ascending: false });
 
   const isOwner = ca.requester_id === profile.id;
   const isOperational = profile.role === "operational";

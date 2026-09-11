@@ -33,20 +33,19 @@ export default async function DashboardPage({ searchParams }) {
   const supabase = await createClient();
   const isOperational = profile?.role === "operational";
 
-  // Statistik dihitung lintas seluruh data lewat RPC, bukan dari list yang
-  // dipaginasi, supaya angkanya tidak ikut terpotong.
-  const { data: stats } = await supabase
-    .rpc("cash_advance_dashboard_stats")
-    .single();
-  const pendingCount = Number(stats?.pending_count ?? 0);
-  const totalOutstanding = Number(stats?.total_outstanding ?? 0);
-
   if (isOperational) {
-    const { data: cashAdvances, count } = await supabase
-      .from("cash_advances")
-      .select("*, profiles:requester_id(full_name)", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to);
+    // Statistik (RPC, lintas seluruh data) dan daftar halaman ini tidak
+    // saling bergantung -- dijalankan paralel, bukan satu-satu berurutan.
+    const [{ data: stats }, { data: cashAdvances, count }] = await Promise.all([
+      supabase.rpc("cash_advance_dashboard_stats").single(),
+      supabase
+        .from("cash_advances")
+        .select("*, profiles:requester_id(full_name)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to),
+    ]);
+    const pendingCount = Number(stats?.pending_count ?? 0);
+    const totalOutstanding = Number(stats?.total_outstanding ?? 0);
 
     const list = await attachBalances(supabase, cashAdvances ?? []);
 
@@ -98,12 +97,16 @@ export default async function DashboardPage({ searchParams }) {
     );
   }
 
-  const { data: cashAdvances, count } = await supabase
-    .from("cash_advances")
-    .select("*", { count: "exact" })
-    .eq("requester_id", profile.id)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const [{ data: stats }, { data: cashAdvances, count }] = await Promise.all([
+    supabase.rpc("cash_advance_dashboard_stats").single(),
+    supabase
+      .from("cash_advances")
+      .select("*", { count: "exact" })
+      .eq("requester_id", profile.id)
+      .order("created_at", { ascending: false })
+      .range(from, to),
+  ]);
+  const totalOutstanding = Number(stats?.total_outstanding ?? 0);
 
   const list = await attachBalances(supabase, cashAdvances ?? []);
 
