@@ -8,6 +8,7 @@ import CurrencyInput from "@/components/CurrencyInput";
 export default function NewCashAdvancePage() {
   const router = useRouter();
   const [purpose, setPurpose] = useState("");
+  const [fundUsageDate, setFundUsageDate] = useState("");
   const [fundingSource, setFundingSource] = useState("");
   const [programRef, setProgramRef] = useState("");
   const [objective, setObjective] = useState("");
@@ -71,21 +72,18 @@ export default function NewCashAdvancePage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("cash_advances")
-      .insert({
-        requester_id: user.id,
-        purpose,
-        funding_source: fundingSource,
-        program_ref: fundingSource === "program" ? programRef.trim() : null,
-        objective,
-        rab_url: rabUrl.trim() || null,
-        amount_requested: numericAmount,
-        bank_name: bankName,
-        bank_account_number: bankAccountNumber,
-      })
-      .select()
-      .single();
+    const { error } = await supabase.from("cash_advances").insert({
+      requester_id: user.id,
+      purpose,
+      fund_usage_date: fundUsageDate,
+      funding_source: fundingSource,
+      program_ref: fundingSource === "program" ? programRef.trim() : null,
+      objective,
+      rab_url: rabUrl.trim() || null,
+      amount_requested: numericAmount,
+      bank_name: bankName,
+      bank_account_number: bankAccountNumber,
+    });
 
     setLoading(false);
 
@@ -99,7 +97,8 @@ export default function NewCashAdvancePage() {
       return;
     }
 
-    router.push(`/cash-advances/${data.id}`);
+    router.back();
+    router.refresh();
   }
 
   return (
@@ -134,6 +133,19 @@ export default function NewCashAdvancePage() {
             onChange={(e) => setPurpose(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
             placeholder="Contoh: Operasional perjalanan dinas ke Surabaya"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Tanggal Dana Mulai Digunakan
+          </label>
+          <input
+            type="date"
+            required
+            value={fundUsageDate}
+            onChange={(e) => setFundUsageDate(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
           />
         </div>
 
@@ -222,7 +234,7 @@ export default function NewCashAdvancePage() {
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Bank Tujuan Transfer
+            Bank Tujuan Transfer (dengan atas nama)
           </label>
           <input
             type="text"

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Users } from "lucide-react";
 import { getUserProfile } from "@/lib/supabase/server";
 import ProfileForm from "@/components/ProfileForm";
 
@@ -20,6 +22,15 @@ export default async function ProfilePage() {
         initialBankName={profile.bank_name}
         initialBankAccountNumber={profile.bank_account_number}
       />
+      {profile?.role === "operational" && (
+        <Link
+          href="/users"
+          className="flex items-center gap-2 bg-white border border-slate-200 hover:border-brand text-slate-700 rounded-xl px-4 py-3 text-sm font-medium"
+        >
+          <Users size={18} />
+          Kelola Pengguna
+        </Link>
+      )}
     </div>
   );
 }

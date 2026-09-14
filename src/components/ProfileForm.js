@@ -44,6 +44,7 @@ export default function ProfileForm({
     }
 
     setSaved(true);
+    router.back();
     router.refresh();
   }
 
@@ -65,7 +66,7 @@ export default function ProfileForm({
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Bank Tujuan Transfer
+          Bank Tujuan Transfer (dengan atas nama)
         </label>
         <input
           type="text"

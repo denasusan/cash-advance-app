@@ -113,8 +113,18 @@ export default async function CashAdvanceDetailPage({ params }) {
           </div>
         </div>
 
-        {(ca.objective || ca.funding_source || ca.rab_url) && (
+        {(ca.fund_usage_date || ca.objective || ca.funding_source || ca.rab_url) && (
           <div className="mt-4 grid grid-cols-2 gap-3">
+            {ca.fund_usage_date && (
+              <div className="bg-slate-50 rounded-lg px-3 py-2">
+                <p className="text-xs text-slate-500">
+                  Tanggal Dana Mulai Digunakan
+                </p>
+                <p className="text-sm font-medium text-slate-900 mt-0.5">
+                  {formatDate(ca.fund_usage_date)}
+                </p>
+              </div>
+            )}
             {ca.objective && (
               <div className="bg-slate-50 rounded-lg px-3 py-2">
                 <p className="text-xs text-slate-500">Tujuan</p>

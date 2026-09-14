@@ -115,7 +115,7 @@ export default function ScanForm({ cashAdvanceId }) {
 
       if (insertError) throw new Error(insertError.message);
 
-      router.push(`/cash-advances/${cashAdvanceId}`);
+      router.back();
       router.refresh();
     } catch (err) {
       setError(err.message || "Gagal menyimpan kwitansi. Coba lagi.");
