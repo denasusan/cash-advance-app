@@ -1,23 +1,40 @@
 import { google } from "googleapis";
 import { getGoogleAuth } from "./auth";
 
-export async function extractReceiptText(base64Image) {
+export async function extractReceiptText(base64Content, mimeType = "image/jpeg") {
   const auth = getGoogleAuth();
   const vision = google.vision({ version: "v1", auth });
+
+  if (mimeType === "application/pdf") {
+    // PDF tidak bisa lewat images.annotate -- pakai files.annotate (endpoint
+    // dokumen). Kwitansi hampir selalu 1 halaman, dan sync files.annotate
+    // dibatasi maks 5 halaman per panggilan, jadi cukup baca halaman 1.
+    const res = await vision.files.annotate({
+      requestBody: {
+        requests: [
+          {
+            inputConfig: { mimeType, content: base64Content },
+            features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+            pages: [1],
+          },
+        ],
+      },
+    });
+    return res.data.responses?.[0]?.responses?.[0]?.fullTextAnnotation?.text ?? "";
+  }
 
   const res = await vision.images.annotate({
     requestBody: {
       requests: [
         {
-          image: { content: base64Image },
+          image: { content: base64Content },
           features: [{ type: "TEXT_DETECTION" }],
         },
       ],
     },
   });
 
-  const annotation = res.data.responses?.[0]?.fullTextAnnotation;
-  return annotation?.text ?? "";
+  return res.data.responses?.[0]?.fullTextAnnotation?.text ?? "";
 }
 
 const AMOUNT_KEYWORDS = [

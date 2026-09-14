@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, ScanLine } from "lucide-react";
+import { Camera, FileText, Loader2, ScanLine } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CurrencyInput from "@/components/CurrencyInput";
 
@@ -47,7 +47,7 @@ export default function ScanForm({ cashAdvanceId }) {
       const res = await fetch("/api/ocr/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64 }),
+        body: JSON.stringify({ imageBase64: base64, mimeType: selected.type }),
       });
       const data = await res.json();
 
@@ -131,8 +131,8 @@ export default function ScanForm({ cashAdvanceId }) {
           Scan Kwitansi
         </h1>
         <p className="text-sm text-slate-500 mt-0.5">
-          Foto kwitansi akan disimpan ke shared drive dan datanya dibaca
-          otomatis.
+          Foto atau PDF kwitansi akan disimpan ke shared drive dan datanya
+          dibaca otomatis.
         </p>
       </div>
 
@@ -149,12 +149,21 @@ export default function ScanForm({ cashAdvanceId }) {
         </button>
       ) : (
         <div className="relative rounded-2xl overflow-hidden border border-slate-200">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Preview kwitansi"
-            className="w-full max-h-72 object-contain bg-slate-50"
-          />
+          {file?.type === "application/pdf" ? (
+            <div className="w-full h-40 flex flex-col items-center justify-center gap-2 bg-slate-50 text-slate-500">
+              <FileText size={32} />
+              <span className="text-xs font-medium truncate max-w-[80%]">
+                {file.name}
+              </span>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt="Preview kwitansi"
+              className="w-full max-h-72 object-contain bg-slate-50"
+            />
+          )}
           {scanning && (
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white gap-2">
               <Loader2 className="animate-spin" size={28} />
@@ -176,7 +185,7 @@ export default function ScanForm({ cashAdvanceId }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         capture="environment"
         onChange={handleFileChange}
         className="hidden"
